@@ -1,0 +1,372 @@
+from rest_framework import serializers
+from .models import *
+
+class ClientSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserProfile
+        fields = ('id', 'username', 'email', 'first_name', 'last_name')
+
+class SellerSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserProfile
+        fields = ('id', 'username', 'email', 'first_name', 'last_name')
+
+class AdminSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserProfile
+        fields = ('id', 'username', 'email', 'first_name', 'last_name')
+
+class StoreCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Store
+        fields = ('id','store_name','store_image','store_description')
+
+
+class StoreListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Store
+        fields = ('id','store_name','store_image')
+
+
+class StoreDetailSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Store
+        fields = ('id','store_name','store_image','store_description')
+
+
+class SubCategorySimpleSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SubCategory
+        fields = ('id','subcategory_name','subcategory_image')
+
+class CategoryListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Category
+        fields = ('id','category_name','category_image')
+
+class CategoryDetailSerializer(serializers.ModelSerializer):
+    subcategories = SubCategorySimpleSerializer(many=True,read_only=True)
+    class Meta:
+        model = Category
+        fields = ('id','category_name','category_image','subcategories',)
+
+class CategorySimpleSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Category
+        fields = ('id','category_name',)
+
+
+class SubCategoryListSerializers(serializers.ModelSerializer):
+    category = CategorySimpleSerializer(read_only=True)
+    category_id = serializers.PrimaryKeyRelatedField(
+        queryset=Category.objects.all(),
+        source='category',
+        write_only=True
+    )
+
+    class Meta:
+        model = SubCategory
+        fields = (
+            'id',
+            'category',
+            'category_id',
+            'subcategory_name',
+            'subcategory_image',
+        )
+
+class SubCategoryDetailSerializers(serializers.ModelSerializer):
+    category = CategorySimpleSerializer(read_only=True)
+    category_id = serializers.PrimaryKeyRelatedField(
+        queryset=Category.objects.all(),
+        source='category',
+        write_only=True
+    )
+
+
+    class Meta:
+        model = SubCategory
+        fields = ('id','category', 'subcategory_name', 'subcategory_image','category_id')
+
+class ProductImageCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProductImage
+        fields = ('id', 'product_image','product')
+
+
+class ProductImageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProductImage
+        fields = ('id','product_image',)
+
+class ProductImageDetailSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProductImage
+        fields = ('id', 'product_image')
+
+
+class ProductCreateSerializers(serializers.ModelSerializer):
+    images = ProductImageSerializer(many=True,read_only=True)
+
+    class Meta:
+        model = Product
+        fields = ('id','product_subcategory', 'product_name', 'images',
+                  'price','country','ingredients',
+                  'best_before_date','action','quantity','description')
+
+
+
+
+
+class StorSimpleSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Store
+        fields = ('id','store_name',)
+
+
+class ProductListSerializers(serializers.ModelSerializer):
+    store = StorSimpleSerializer(read_only=True)
+    images  = ProductImageSerializer(many=True,read_only=True)
+    avg_rating = serializers.ReadOnlyField()
+    rating_count = serializers.SerializerMethodField()
+    good_rate = serializers.ReadOnlyField()
+
+
+    class Meta:
+        model = Product
+        fields = ('id','store','product_name','images','price','avg_rating','rating_count','good_rate',
+)
+    def get_rating_count(self, obj):
+        return obj.get_count_rating()
+
+
+
+
+
+class ProductDetailSerializers(serializers.ModelSerializer):
+    images = ProductImageSerializer(many=True,read_only=True)
+    store = StorSimpleSerializer(read_only=True)
+    avg_rating = serializers.ReadOnlyField()
+    good_rate = serializers.ReadOnlyField()
+
+
+
+
+    class Meta:
+        model = Product
+        fields = ('id', 'store', 'product_name', 'images',
+                  'price','country','ingredients',
+                  'best_before_date','action','quantity','description','avg_rating','good_rate',
+)
+
+    def get_avg_rating(self, obj):
+        return obj.avg_rating
+
+
+
+
+class ProductMiniSerializers(serializers.ModelSerializer):
+    class Meta:
+        model = Product
+        fields = ('id', 'product_name')
+
+
+
+
+class SaleSerializer(serializers.ModelSerializer):
+    product = serializers.PrimaryKeyRelatedField(queryset=Product.objects.all())
+    product_name = serializers.ReadOnlyField(source='product.product_name')
+    product_price = serializers.ReadOnlyField(source='product.price')
+    discounted_price = serializers.ReadOnlyField()
+    is_currently_active = serializers.ReadOnlyField()
+    start_date = serializers.DateTimeField(format='%d-%m-%Y',)
+    end_date = serializers.DateTimeField(format='%d-%m-%Y',)
+
+
+
+    class Meta:
+        model = Sale
+        fields = (
+ 'id','product','product_name', 'product_price', 'discount_percent',
+ 'discounted_price', 'description1','description2','is_active', 'start_date','end_date',
+ 'is_currently_active',
+        )
+
+
+class OrderItemSerializers(serializers.ModelSerializer):
+    product_items = ProductMiniSerializers(read_only=True)
+
+    class Meta:
+        model = OrderItem
+        fields = (
+            'id','product', 'address','quantity','price','phone_number','product_items'
+        )
+
+class OrderSerializers(serializers.ModelSerializer):
+    items = OrderItemSerializers(many=True, read_only=True)
+    customer_username = serializers.CharField(source='customer.username', read_only=True)
+
+    class Meta:
+        model = Order
+        fields = ('id','customer', 'customer_username','status','created_at','items',)
+
+class UserProfileReviewSerializers(serializers.ModelSerializer):
+    class Meta:
+        model = UserProfile
+        fields = ('id','email','first_name','last_name','phone_number','username')
+
+
+class ReviewReplySerializer(serializers.ModelSerializer):
+    user_name = serializers.CharField(source='user.username', read_only=True)
+    parent_user_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Review
+        fields = (
+            'id',
+            'user_name',
+            'comment',
+            'rating',
+            'likes_count',
+            'parent_user_name',
+        )
+
+    def get_parent_user_name(self, obj):
+        if obj.parent:
+            return obj.parent.user.username  # вот так берём имя родителя
+        return None
+
+
+
+
+
+class ReviewSerializers(serializers.ModelSerializer):
+    user_reviews = UserProfileReviewSerializers(read_only=True)
+    likes_count = serializers.ReadOnlyField()
+    replies = serializers.SerializerMethodField()
+    product  = ProductMiniSerializers(read_only=True)
+    product_id = serializers.PrimaryKeyRelatedField(
+        queryset=Product.objects.all(),
+        source='product',
+        write_only=True
+    )
+
+    class Meta:
+        model = Review
+        fields = (
+            'id','user_reviews','product','rating','comment',
+            'photo1','photo2','photo3','photo4','likes_count',
+            'created_at','replies','parent','product_id',
+
+        )
+
+    def get_replies(self, obj):
+        qs = obj.replies.all()
+        return ReviewReplySerializer(qs, many=True).data
+
+
+class ReviewDetailSerializers(serializers.ModelSerializer):
+    user_reviews = UserProfileReviewSerializers(read_only=True)
+    likes_count = serializers.ReadOnlyField()
+    replies = serializers.SerializerMethodField()  # вложенные ответы
+
+    class Meta:
+        model = Review
+        fields = (
+            'id','user_reviews','product','rating','comment',
+            'photo1','photo2','photo3','photo4','likes_count',
+            'created_at','replies','parent'
+        )
+        read_only_fields = ['user', 'likes_count', 'created_at']
+
+    def get_replies(self, obj):
+        qs = obj.replies.all()
+        return ReviewReplySerializer(qs, many=True).data
+
+
+
+
+
+
+class CommentLikeSerializer(serializers.ModelSerializer):
+    user_name = serializers.CharField(source='user.username', read_only=True)
+    review_text = serializers.CharField(source='review.comment', read_only=True)
+    total_likes = serializers.IntegerField(source='review.likes_count', read_only=True)  # вот здесь
+
+    class Meta:
+        model = CommentLike
+        fields = ('id', 'user', 'review', 'user_name', 'review_text', 'total_likes', 'created_at')
+        read_only_fields = ('created_at', 'user_name', 'review_text', 'total_likes')
+
+
+class CartItemSerializer(serializers.ModelSerializer):
+    product_name = serializers.ReadOnlyField(source='product.product_name')
+    product_price = serializers.ReadOnlyField(source='product.price')
+    total_price = serializers.ReadOnlyField()
+
+    class Meta:
+        model = CartItem
+        fields = (
+            'id','product','product_name','product_price','quantity', 'total_price',)
+
+
+class CartSerializer(serializers.ModelSerializer):
+    items = CartItemSerializer(many=True, read_only=True)
+    total_price = serializers.ReadOnlyField()
+
+    class Meta:
+        model = Cart
+        fields = (
+            'id','user','items','total_price',
+        )
+        read_only_fields = ('user',)
+
+class FavoriteProductSerializer(serializers.ModelSerializer):
+    product_name = serializers.ReadOnlyField(source='product.product_name')
+    product_price = serializers.ReadOnlyField(source='product.price')
+    created_date = serializers.DateTimeField(format='%d-%m-%Y', read_only=True)
+
+
+
+
+    class Meta:
+        model = FavoriteProduct
+        fields = (
+            'id','product','product_name','product_price','created_date',
+        )
+        read_only_fields = ('created_date',)
+
+
+class FavoriteSerializer(serializers.ModelSerializer):
+    items = FavoriteProductSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Favorite
+        fields = ('id', 'items',)
+
+
+
+
+
+class SellerRequestCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SellerRequest
+        fields = ('id','phone_number', 'message')
+
+    def create(self, validated_data):
+        user = self.context['request'].user
+
+        if hasattr(user, 'seller_request'):
+            raise serializers.ValidationError('Заявка уже отправлена')
+
+        return SellerRequest.objects.create(
+            user=user,
+            **validated_data
+        )
+
+
+class SellerRequestAdminSerializer(serializers.ModelSerializer):
+    user = serializers.StringRelatedField()
+
+    class Meta:
+        model = SellerRequest
+        fields = '__all__'
