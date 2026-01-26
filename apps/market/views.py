@@ -11,11 +11,7 @@ from django.utils import timezone
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from rest_framework.views import APIView
-from .serializers import (
-    RegisterSerializer,
-    CustomLoginSerializer,
-    LogoutSerializer
-)
+from rest_framework.decorators import api_view
 
 
 class RegisterView(generics.CreateAPIView):
@@ -50,6 +46,13 @@ class LogoutView(generics.GenericAPIView):
         except Exception:
             return Response({'detail': 'Невалидный токен'}, status=status.HTTP_400_BAD_REQUEST)
 
+@api_view(['POST'])
+def verify_reset_code(request):
+    serializer = VerifyResetCodeSerializer(data=request.data)
+    if serializer.is_valid():
+        serializer.save()
+        return Response({'message': 'Пароль успешно сброшен.'}, status=status.HTTP_200_OK)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class ClientAPIView(generics.ListAPIView):
     queryset = UserProfile.objects.filter(user_role='client')
