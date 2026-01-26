@@ -9,7 +9,7 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 
 class UserProfile(AbstractUser):
     email = models.EmailField(unique=True)
-    phone_number = PhoneNumberField(null=True,blank=True,unique=True)
+    phone_number = PhoneNumberField(null=True,blank=True, unique=True)
     ROLES_CHOICES = (
         ('admin', 'admin'),
         ('seller', 'seller'),
